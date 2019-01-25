@@ -1,0 +1,15 @@
+{
+    "name": "n.gerritsen/http-upload",
+    "authors": [
+        {
+            "name": "Niels Gerritsen",
+            "email": "n.c.gerritsen@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"HttpUpload\\": "src/"}
+    },
+    "require": {
+        "slim/slim": "^3.12"
+    }
+}
