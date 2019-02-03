@@ -46,11 +46,11 @@ class HttpUploadController
         try {
             $this->fileWriter->write($filepath, $uploadedFiles['data']);
 
-            $response->getBody()->write('Wrote ' . $filepath . '\n');
+            $response->getBody()->write('Wrote ' . $filepath);
 
             return $response->withStatus(200);
         } catch (\RuntimeException $exception) {
-            $response->getBody()->write('Failed writing ' . $filepath . '\n');
+            $response->getBody()->write('Failed writing ' . $filepath);
 
             return $response->withStatus(500);
         }
