@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace HttpUpload;
 
-use Exception;
-use Psr\Http\Message\StreamInterface;
+use Slim\Http\UploadedFile;
 
 class FileWriter
 {
@@ -20,41 +19,35 @@ class FileWriter
     }
 
     /**
-     * @param string $filepath
-     * @param StreamInterface $data
-     * @throws Exception
+     * @param string $basePath
+     * @param string $dir
+     * @param UploadedFile $file
      * @return void
      */
-    public function write(string $filepath, StreamInterface $data)
+    public function write(string $filepath, UploadedFile $file)
     {
-        $this->createDirectories($filepath);
-
-        $result = file_put_contents($this->rootDir . $filepath, $data);
-
-        if ($result === false) {
-            throw new Exception('Failed to write ' . $filepath);
-        }
+        $filepath = ltrim($filepath, '/');
+        $this->createDirectories(pathinfo($filepath)['dirname']);
+        $file->moveTo($this->rootDir . $filepath);
     }
 
-
     /**
-     * @param string $filepath
+     * @param string $dir
      * @return void
      */
-    private function createDirectories(string $filepath)
+    private function createDirectories(string $dir)
     {
-        $dirname = pathinfo($filepath)['dirname'];
-        $dirs = array_filter(explode('/', $dirname));
+        $dirs = explode('/', $dir);
         $currentDir = $this->rootDir;
 
         while (!empty($dirs)) {
-            $currentDir .= array_shift($dirs);
+            $currentDir = $currentDir . array_shift($dirs) . '/';
 
             if (is_dir($currentDir)) {
                 continue;
             }
 
-            mkdir($this->rootDir . $dirname, 0744, true);
+            mkdir($this->rootDir . $dir, 0744, true);
             break;
         }
     }

@@ -28,17 +28,31 @@ class HttpUploadController
      */
     public function post(Request $request, Response $response): Response
     {
-        $filepath = $request->getHeaderLine('X-FilePath');
-        $data = $request->getBody();
+        $filepath = $request->getHeaderLine('X-Filepath');
+        $uploadedFiles = $request->getUploadedFiles();
 
         if (empty($filepath)) {
-            throw new Exception('Please provide a valid file path.');
+            $response->getBody()->write('Please provide a filepath in X-FilePath.');
+
+            return $response->withStatus(400);
         }
 
-        $this->fileWriter->write($filepath, $data);
+        if (!isset($uploadedFiles['data'])) {
+            $response->getBody()->write('Please provide the file contents under the key "data".');
 
-        $response->getBody()->write('Wrote ' . $filepath);
+            return $response->withStatus(400);
+        }
 
-        return $response->withStatus(200);
+        try {
+            $this->fileWriter->write($filepath, $uploadedFiles['data']);
+
+            $response->getBody()->write('Wrote ' . $filepath . '\n');
+
+            return $response->withStatus(200);
+        } catch (\RuntimeException $exception) {
+            $response->getBody()->write('Failed writing ' . $filepath . '\n');
+
+            return $response->withStatus(500);
+        }
     }
 }

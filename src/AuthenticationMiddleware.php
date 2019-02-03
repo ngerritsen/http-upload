@@ -30,6 +30,7 @@ class AuthenticationMiddleware
 
         if (empty($providedKey) || $this->key !== $providedKey) {
             $response->getBody()->write('Access denied.');
+
             return $response->withStatus(403);
         };
 
