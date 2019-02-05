@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace HttpUpload;
 
+use Error;
 use Slim\Http\UploadedFile;
 use ZipArchive;
 
@@ -30,9 +31,14 @@ class Extractor
         $absoluteDir = $this->rootDir . $dir;
         $zipPath = $absoluteDir . '/' . $file->getClientFilename();
 
-        $this->createDirectories(pathinfo($dir, PATHINFO_DIRNAME));
+        $this->createDirectories($dir);
         $file->moveTo($zipPath);
-        $this->extractZip($zipPath, $absoluteDir);
+
+        $archive = new ZipArchive();
+
+        $archive->open($zipPath);
+        $archive->extractTo($absoluteDir);
+        $archive->close();
 
         unlink($zipPath);
     }
@@ -56,18 +62,5 @@ class Extractor
             mkdir($this->rootDir . $dir, 0744, true);
             break;
         }
-    }
-
-    /**
-     * @param $zipPath
-     * @param $absoluteDir
-     * @return void
-     */
-    private function extractZip($zipPath, $absoluteDir)
-    {
-        $archive = new ZipArchive();
-        $archive->open($zipPath);
-        $archive->extractTo($absoluteDir);
-        $archive->close();
     }
 }

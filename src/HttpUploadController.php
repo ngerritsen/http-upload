@@ -29,40 +29,37 @@ class HttpUploadController
      */
     public function post(Request $request, Response $response): Response
     {
-        $dir = $request->getHeaderLine('X-ExtactTo');
+        $dir = $request->getHeaderLine('X-ExtractTo');
         $uploadedFiles = $request->getUploadedFiles();
 
         if (empty($dir)) {
-            $response->getBody()->write('Please provide a directory in X-ExtractTo.');
-
-            return $response->withStatus(400);
+            return $this->createResponse($response, 400, 'Please provide a directory in X-ExtractTo.');
         }
 
         if (!isset($uploadedFiles['data'])) {
-            $response->getBody()->write('Please provide the file contents of your zip under the key "data".');
-
-            return $response->withStatus(400);
+            return $this->createResponse($response, 400, 'Please provide the file contents of your zip under the key "data".');
         }
 
         /** @var UploadedFile $file */
         $file = $uploadedFiles['data'];
 
         if (pathinfo($file->getClientFilename(), PATHINFO_EXTENSION) !== 'zip') {
-            $response->getBody()->write('Please provide a zip file.');
-
-            return $response->withStatus(400);
+            return $this->createResponse($response, 400, 'Please provide a zip file.');
         }
 
         try {
             $this->extractor->extract($dir, $file);
 
-            $response->getBody()->write('Successfully deployed');
-
-            return $response->withStatus(200);
+            return $this->createResponse($response, 200, 'Successfully deployed');
         } catch (\RuntimeException $exception) {
-            $response->getBody()->write('Deployment failed');
-
-            return $response->withStatus(500);
+            return $this->createResponse($response, 500, 'Deployment failed');
         }
+    }
+
+    private function createResponse(Response $response, int $status, string $message)
+    {
+        $response->getBody()->write($message);
+
+        return $response->withStatus($status);
     }
 }
