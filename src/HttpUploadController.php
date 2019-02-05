@@ -6,18 +6,19 @@ namespace HttpUpload;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Slim\Http\UploadedFile;
 
 class HttpUploadController
 {
-    /** @var FileWriter */
-    private $fileWriter;
+    /** @var Extractor */
+    private $extractor;
 
     /**
-     * @param FileWriter $fileWriter
+     * @param Extractor $extractor
      */
-    public function __construct(FileWriter $fileWriter)
+    public function __construct(Extractor $extractor)
     {
-        $this->fileWriter = $fileWriter;
+        $this->extractor = $extractor;
     }
 
     /**
@@ -28,29 +29,38 @@ class HttpUploadController
      */
     public function post(Request $request, Response $response): Response
     {
-        $filepath = $request->getHeaderLine('X-Filepath');
+        $dir = $request->getHeaderLine('X-ExtactTo');
         $uploadedFiles = $request->getUploadedFiles();
 
-        if (empty($filepath)) {
-            $response->getBody()->write('Please provide a filepath in X-FilePath.');
+        if (empty($dir)) {
+            $response->getBody()->write('Please provide a directory in X-ExtractTo.');
 
             return $response->withStatus(400);
         }
 
         if (!isset($uploadedFiles['data'])) {
-            $response->getBody()->write('Please provide the file contents under the key "data".');
+            $response->getBody()->write('Please provide the file contents of your zip under the key "data".');
+
+            return $response->withStatus(400);
+        }
+
+        /** @var UploadedFile $file */
+        $file = $uploadedFiles['data'];
+
+        if (pathinfo($file->getClientFilename(), PATHINFO_EXTENSION) !== 'zip') {
+            $response->getBody()->write('Please provide a zip file.');
 
             return $response->withStatus(400);
         }
 
         try {
-            $this->fileWriter->write($filepath, $uploadedFiles['data']);
+            $this->extractor->extract($dir, $file);
 
-            $response->getBody()->write('Wrote ' . $filepath);
+            $response->getBody()->write('Successfully deployed');
 
             return $response->withStatus(200);
         } catch (\RuntimeException $exception) {
-            $response->getBody()->write('Failed writing ' . $filepath);
+            $response->getBody()->write('Deployment failed');
 
             return $response->withStatus(500);
         }

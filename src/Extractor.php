@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace HttpUpload;
 
 use Slim\Http\UploadedFile;
+use ZipArchive;
 
-class FileWriter
+class Extractor
 {
     /** @var string */
     private $rootDir;
@@ -19,16 +20,21 @@ class FileWriter
     }
 
     /**
-     * @param string $basePath
      * @param string $dir
      * @param UploadedFile $file
      * @return void
      */
-    public function write(string $filepath, UploadedFile $file)
+    public function extract(string $dir, UploadedFile $file)
     {
-        $filepath = ltrim($filepath, '/');
-        $this->createDirectories(pathinfo($filepath)['dirname']);
-        $file->moveTo($this->rootDir . $filepath);
+        $dir = ltrim($dir, '/');
+        $absoluteDir = $this->rootDir . $dir;
+        $zipPath = $absoluteDir . '/' . $file->getClientFilename();
+
+        $this->createDirectories(pathinfo($dir, PATHINFO_DIRNAME));
+        $file->moveTo($zipPath);
+        $this->extractZip($zipPath, $absoluteDir);
+
+        unlink($zipPath);
     }
 
     /**
@@ -50,5 +56,18 @@ class FileWriter
             mkdir($this->rootDir . $dir, 0744, true);
             break;
         }
+    }
+
+    /**
+     * @param $zipPath
+     * @param $absoluteDir
+     * @return void
+     */
+    private function extractZip($zipPath, $absoluteDir)
+    {
+        $archive = new ZipArchive();
+        $archive->open($zipPath);
+        $archive->extractTo($absoluteDir);
+        $archive->close();
     }
 }

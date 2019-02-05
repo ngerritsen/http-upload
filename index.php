@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use HttpUpload\AuthenticationMiddleware;
-use HttpUpload\FileWriter;
+use HttpUpload\Extractor;
 use HttpUpload\HttpUploadController;
 use Psr\Container\ContainerInterface;
 use Slim\App;
@@ -15,8 +15,8 @@ $app = new App($config['slim']);
 
 $container = $app->getContainer();
 
-$container[FileWriter::class] = function () use ($config): FileWriter {
-    return new FileWriter($config['rootDir']);
+$container[Extractor::class] = function () use ($config): Extractor {
+    return new Extractor($config['rootDir']);
 };
 
 $container[AuthenticationMiddleware::class] = function () use ($config): AuthenticationMiddleware {
@@ -24,7 +24,7 @@ $container[AuthenticationMiddleware::class] = function () use ($config): Authent
 };
 
 $container[HttpUploadController::class] = function (ContainerInterface $container):HttpUploadController {
-    return new HttpUploadController($container->get(FileWriter::class));
+    return new HttpUploadController($container->get(Extractor::class));
 };
 
 $app->add(AuthenticationMiddleware::class);
